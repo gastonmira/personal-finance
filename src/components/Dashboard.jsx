@@ -5,19 +5,21 @@ import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
 import FileUpload from './FileUpload'
 import { formatARS, formatUSD, toDisplayMonth, CARD_LABELS, CARD_COLORS } from '../utils/format'
+import { useTranslation } from '../i18n/useTranslation'
 
-const CATEGORY_COLORS = {
-  Supermercado:   '#22c55e',
-  Restaurantes:   '#f59e0b',
-  Transporte:     '#38bdf8',
-  Servicios:      '#8b5cf6',
-  Salud:          '#ec4899',
-  Entretenimiento:'#f97316',
-  Indumentaria:   '#a78bfa',
-  Tecnología:     '#06b6d4',
-  Educación:      '#84cc16',
-  Otros:          '#64748b',
-}
+// Colors by category index (same order as CATEGORIES)
+const CATEGORY_COLORS = [
+  '#22c55e', // Supermarket / Supermercado
+  '#f59e0b', // Restaurants / Restaurantes
+  '#38bdf8', // Transport / Transporte
+  '#8b5cf6', // Services / Servicios
+  '#ec4899', // Health / Salud
+  '#f97316', // Entertainment / Entretenimiento
+  '#a78bfa', // Clothing / Indumentaria
+  '#06b6d4', // Technology / Tecnología
+  '#84cc16', // Education / Educación
+  '#64748b', // Other / Otros
+]
 
 function getCurrentMonthKey() {
   const now = new Date()
@@ -26,23 +28,30 @@ function getCurrentMonthKey() {
   return `${y}-${m}`
 }
 
-function CategoryBreakdown({ transactions, onManage }) {
-  const summary = transactions.reduce((acc, t) => {
-    acc[t.category] = (acc[t.category] ?? 0) + t.amount
+function CategoryBreakdown({ transactions, onManage, t }) {
+  const localeCategories = t('categories')
+
+  const getCategoryColor = (cat) => {
+    const idx = localeCategories.indexOf(cat)
+    return idx >= 0 ? CATEGORY_COLORS[idx] : '#64748b'
+  }
+
+  const summary = transactions.reduce((acc, tx) => {
+    acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount
     return acc
   }, {})
-  const total = transactions.reduce((s, t) => s + t.amount, 0)
+  const total = transactions.reduce((s, tx) => s + tx.amount, 0)
   const sorted = Object.entries(summary).sort((a, b) => b[1] - a[1])
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
       <div className="flex items-center justify-between mb-5">
-        <h4 className="font-semibold text-white">Desglose por Categoría</h4>
+        <h4 className="font-semibold text-white">{t('spendingBreakdown')}</h4>
         <button
           onClick={onManage}
           className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
         >
-          {transactions.length} transacciones
+          {transactions.length} {t('transactionsCount')}
         </button>
       </div>
       <div className="space-y-3">
@@ -54,7 +63,7 @@ function CategoryBreakdown({ transactions, onManage }) {
                 <div className="flex items-center gap-2">
                   <div
                     className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: CATEGORY_COLORS[cat] ?? '#64748b' }}
+                    style={{ backgroundColor: getCategoryColor(cat) }}
                   />
                   <span className="text-slate-300 text-sm">{cat}</span>
                 </div>
@@ -72,7 +81,7 @@ function CategoryBreakdown({ transactions, onManage }) {
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${pct}%`,
-                    backgroundColor: CATEGORY_COLORS[cat] ?? '#64748b',
+                    backgroundColor: getCategoryColor(cat),
                   }}
                 />
               </div>
@@ -98,6 +107,7 @@ export default function Dashboard() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
   const navigate = useNavigate()
+  const t = useTranslation()
 
   const [showUpload, setShowUpload] = useState(false)
   const [activeMonth, setActiveMonth] = useState(getCurrentMonthKey)
@@ -123,21 +133,23 @@ export default function Dashboard() {
       : null
 
   const cards = ['santander', 'amex', 'provincia', 'uala']
+  const monthNames = t('monthNames')
+  const statementLabel = t('statementOf')
 
   return (
     <div className="p-8 max-w-5xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-          <p className="text-slate-500 text-sm mt-1">Resumen financiero mensual</p>
+          <h2 className="text-2xl font-bold text-white">{t('dashboardTitle')}</h2>
+          <p className="text-slate-500 text-sm mt-1">{t('dashboardSubtitle')}</p>
         </div>
         <button
           onClick={() => setShowUpload((v) => !v)}
           className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors"
         >
           <Upload size={16} />
-          Importar XLS
+          {t('importXLS')}
         </button>
       </div>
 
@@ -150,13 +162,13 @@ export default function Dashboard() {
 
       {!hasData && !showUpload && (
         <div className="text-center py-20">
-          <p className="text-slate-500 text-lg">No hay datos cargados</p>
-          <p className="text-slate-600 text-sm mt-2">Importá tu archivo XLS para comenzar</p>
+          <p className="text-slate-500 text-lg">{t('noDataLoaded')}</p>
+          <p className="text-slate-600 text-sm mt-2">{t('noDataInstruction')}</p>
           <button
             onClick={() => setShowUpload(true)}
             className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors"
           >
-            Importar XLS
+            {t('importXLS')}
           </button>
         </div>
       )}
@@ -174,10 +186,10 @@ export default function Dashboard() {
             </button>
             <div className="text-center min-w-52">
               <h3 className="text-lg font-semibold text-white">
-                {toDisplayMonth(displayMonth).label}
+                {toDisplayMonth(displayMonth, monthNames, statementLabel).label}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                {toDisplayMonth(displayMonth).note}
+                {toDisplayMonth(displayMonth, monthNames, statementLabel).note}
               </p>
             </div>
             <button
@@ -194,26 +206,26 @@ export default function Dashboard() {
               {/* Summary stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard
-                  label="Total XLS"
+                  label={t('statTotalXLS')}
                   value={formatARS(displayData.totalXLS)}
-                  sub="Gastos del período"
+                  sub={t('statTotalXLSSub')}
                 />
                 <StatCard
-                  label="Total Resúmenes"
+                  label={t('statTotalStatements')}
                   value={totalStatements > 0 ? formatARS(totalStatements) : '—'}
-                  sub={totalStatements > 0 ? 'Resúmenes cargados' : 'Pendiente de cargar'}
+                  sub={totalStatements > 0 ? t('statStatementsLoaded') : t('statPending')}
                   color={totalStatements > 0 ? 'text-blue-400' : 'text-slate-500'}
                 />
                 <StatCard
-                  label="USD Cobrado"
+                  label={t('statUSDEarned')}
                   value={formatUSD(displayData.usdEarned)}
-                  sub="Ingresos en dólares"
+                  sub={t('statUSDEarnedSub')}
                   color="text-emerald-400"
                 />
                 <StatCard
-                  label="Balance USD"
+                  label={t('statUSDBalance')}
                   value={usdBalance !== null ? formatUSD(usdBalance) : '—'}
-                  sub={`Vendido: ${formatUSD(displayData.usdSold)}`}
+                  sub={`${t('statUSDSold')} ${formatUSD(displayData.usdSold)}`}
                   color={usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}
                 />
               </div>
@@ -223,19 +235,20 @@ export default function Dashboard() {
                 <CategoryBreakdown
                   transactions={displayData.transactions}
                   onManage={() => navigate('/ingresar', { state: { month: displayMonth } })}
+                  t={t}
                 />
               )}
 
               {/* Cards breakdown */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
                 <div className="flex items-center justify-between mb-5">
-                  <h4 className="font-semibold text-white">Por Tarjeta</h4>
+                  <h4 className="font-semibold text-white">{t('sectionByCard')}</h4>
                   <button
                     onClick={() => navigate('/ingresar', { state: { month: displayMonth } })}
                     className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                   >
                     <PlusCircle size={14} />
-                    Cargar resúmenes
+                    {t('loadStatements')}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -252,15 +265,15 @@ export default function Dashboard() {
                         <span className="text-slate-300 text-sm w-28 shrink-0">{CARD_LABELS[card]}</span>
                         <div className="flex-1 flex items-center gap-6">
                           <div className="text-sm">
-                            <span className="text-slate-500 text-xs">XLS </span>
+                            <span className="text-slate-500 text-xs">{t('labelXLS')} </span>
                             <span className="text-slate-200">{formatARS(xlsAmt)}</span>
                           </div>
                           <div className="text-sm">
-                            <span className="text-slate-500 text-xs">Resumen </span>
+                            <span className="text-slate-500 text-xs">{t('labelStatement')} </span>
                             {stmtAmt ? (
                               <span className="text-blue-400">{formatARS(stmtAmt)}</span>
                             ) : (
-                              <span className="text-slate-600 text-xs">Pendiente</span>
+                              <span className="text-slate-600 text-xs">{t('pending')}</span>
                             )}
                           </div>
                         </div>
@@ -272,7 +285,7 @@ export default function Dashboard() {
             </>
           ) : (
             <div className="text-center py-12 text-slate-500">
-              No hay datos para {toDisplayMonth(activeMonth).label}
+              {t('noDataForMonth')} {toDisplayMonth(activeMonth, monthNames, statementLabel).label}
             </div>
           )}
         </>

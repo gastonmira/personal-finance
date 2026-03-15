@@ -3,10 +3,11 @@ import { useLocation } from 'react-router-dom'
 import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import { formatMonthKey, formatARS, CARD_LABELS, CARD_COLORS, MONTH_NAMES } from '../utils/format'
+import { formatMonthKey, formatARS, CARD_LABELS, CARD_COLORS } from '../utils/format'
 import { parseStatementFile } from '../utils/statementParser'
 import ColumnMapper from './ColumnMapper'
 import TransactionList from './TransactionList'
+import { useTranslation } from '../i18n/useTranslation'
 
 const CARDS = ['santander', 'amex', 'provincia', 'uala']
 
@@ -57,6 +58,7 @@ export default function EntryForm() {
   const setUSD = useFinanceStore((s) => s.setUSD)
   const setTransactions = useFinanceStore((s) => s.setTransactions)
   const appendTransactions = useFinanceStore((s) => s.appendTransactions)
+  const t = useTranslation()
 
   const monthOptions = buildMonthOptions(sortedKeys)
 
@@ -183,18 +185,20 @@ export default function EntryForm() {
     return sum + (isNaN(v) ? 0 : v)
   }, 0) || null
 
+  const monthNames = t('monthNames')
+
   return (
     <div className="p-8 max-w-2xl">
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Ingresar Datos</h2>
-        <p className="text-slate-500 text-sm mt-1">Cargá el resumen mensual por tarjeta y tus dólares</p>
+        <h2 className="text-2xl font-bold text-white">{t('entryTitle')}</h2>
+        <p className="text-slate-500 text-sm mt-1">{t('entrySubtitle')}</p>
       </div>
 
       {/* Month selector */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
         <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">
-          Mes a cargar
+          {t('monthLabel')}
         </label>
         <select
           value={selectedMonth}
@@ -204,19 +208,19 @@ export default function EntryForm() {
         >
           {monthOptions.map((key) => (
             <option key={key} value={key}>
-              {formatMonthKey(key)}
+              {formatMonthKey(key, monthNames)}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Resumen por tarjeta */}
+      {/* Card statements */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-semibold text-white">Resumen por Tarjeta</h3>
+          <h3 className="font-semibold text-white">{t('cardStatements')}</h3>
           {xlsData && (
             <span className="text-xs text-slate-500">
-              Total XLS:{' '}
+              {t('totalXLSLabel')}{' '}
               <span className="text-slate-300">
                 {new Intl.NumberFormat('es-AR', {
                   style: 'currency',
@@ -238,7 +242,7 @@ export default function EntryForm() {
               />
               {xlsData?.cards?.[card] ? (
                 <p className="text-xs text-slate-600 mt-1 ml-40">
-                  XLS:{' '}
+                  {t('xlsLabel')}{' '}
                   {new Intl.NumberFormat('es-AR', {
                     style: 'currency',
                     currency: 'ARS',
@@ -253,10 +257,10 @@ export default function EntryForm() {
 
       {/* USD */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-        <h3 className="font-semibold text-white mb-5">Dólares del Mes</h3>
+        <h3 className="font-semibold text-white mb-5">{t('monthlyDollarsSection')}</h3>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">💵 USD Cobrado</span>
+            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdEarned')}</span>
             <div className="relative flex-1 max-w-xs">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
               <input
@@ -273,7 +277,7 @@ export default function EntryForm() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">🔄 USD Vendido</span>
+            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdSold')}</span>
             <div className="relative flex-1 max-w-xs">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
               <input
@@ -291,7 +295,7 @@ export default function EntryForm() {
           </div>
           {usdEarned && usdSold && (
             <div className="mt-2 ml-40 text-sm">
-              <span className="text-slate-500">Balance: </span>
+              <span className="text-slate-500">{t('balanceLabel')} </span>
               <span
                 className={
                   parseFloat(usdEarned) - parseFloat(usdSold) >= 0
@@ -306,17 +310,17 @@ export default function EntryForm() {
         </div>
       </div>
 
-      {/* Desglose de gastos */}
+      {/* Spending breakdown */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="font-semibold text-white">Desglose de Gastos</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Subí el CSV/XLS del resumen para categorizar automáticamente</p>
+            <h3 className="font-semibold text-white">{t('breakdownSection')}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{t('breakdownSubtitle')}</p>
           </div>
           {existingTxs.length > 0 && breakdownStep === 'idle' && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-400">
               <List size={13} />
-              {existingTxs.length} transacciones
+              {existingTxs.length} {t('transactionsCount')}
             </span>
           )}
           {breakdownStep !== 'idle' && (
@@ -325,7 +329,7 @@ export default function EntryForm() {
                 ? 'bg-blue-600/20 text-blue-400'
                 : 'bg-slate-700 text-slate-400'
             }`}>
-              {uploadMode === 'append' ? '+ Agregar' : 'Reemplazar'}
+              {uploadMode === 'append' ? t('modeAppend') : t('modeReplace')}
             </span>
           )}
         </div>
@@ -333,7 +337,6 @@ export default function EntryForm() {
         {/* Idle state */}
         {breakdownStep === 'idle' && (
           <div className="space-y-4">
-            {/* Existing transactions mini-summary */}
             {existingTxs.length > 0 && (
               <ExistingBreakdownSummary
                 transactions={existingTxs}
@@ -341,6 +344,7 @@ export default function EntryForm() {
                   setPendingTxs(existingTxs)
                   setBreakdownStep('review')
                 }}
+                t={t}
               />
             )}
 
@@ -361,7 +365,7 @@ export default function EntryForm() {
                                text-blue-400 hover:text-blue-300 rounded-lg text-sm font-medium transition-colors"
                   >
                     <PlusCircle size={15} />
-                    Agregar otro resumen
+                    {t('addAnotherStatement')}
                   </button>
                   <button
                     onClick={() => triggerUpload('replace')}
@@ -369,14 +373,14 @@ export default function EntryForm() {
                                text-slate-400 hover:text-slate-200 rounded-lg text-sm font-medium transition-colors"
                   >
                     <Upload size={15} />
-                    Reemplazar todo
+                    {t('replaceAll')}
                   </button>
                   <button
                     onClick={handleClearTransactions}
                     className="flex items-center gap-2 px-3 py-2.5 text-slate-600 hover:text-red-400 transition-colors text-sm"
                   >
                     <Trash2 size={14} />
-                    Limpiar
+                    {t('clear')}
                   </button>
                 </div>
               ) : (
@@ -386,7 +390,7 @@ export default function EntryForm() {
                              text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   <Upload size={15} />
-                  Subir CSV / XLS
+                  {t('uploadCSV')}
                 </button>
               )}
               {parseError && (
@@ -426,12 +430,12 @@ export default function EntryForm() {
         {saved ? (
           <>
             <CheckCircle size={18} />
-            Guardado
+            {t('saved')}
           </>
         ) : (
           <>
             <Save size={18} />
-            Guardar
+            {t('save')}
           </>
         )}
       </button>
@@ -440,15 +444,15 @@ export default function EntryForm() {
 }
 
 // Mini-summary of already saved transactions
-function ExistingBreakdownSummary({ transactions, onEdit }) {
-  const summary = transactions.reduce((acc, t) => {
-    acc[t.category] = (acc[t.category] ?? 0) + t.amount
+function ExistingBreakdownSummary({ transactions, onEdit, t }) {
+  const summary = transactions.reduce((acc, tx) => {
+    acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount
     return acc
   }, {})
   const top = Object.entries(summary)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
-  const total = transactions.reduce((s, t) => s + t.amount, 0)
+  const total = transactions.reduce((s, tx) => s + tx.amount, 0)
 
   return (
     <div className="bg-slate-800/40 rounded-lg p-4 space-y-2">
@@ -459,10 +463,10 @@ function ExistingBreakdownSummary({ transactions, onEdit }) {
         </div>
       ))}
       {Object.keys(summary).length > 4 && (
-        <p className="text-xs text-slate-600">+ {Object.keys(summary).length - 4} categorías más</p>
+        <p className="text-xs text-slate-600">+ {Object.keys(summary).length - 4} {t('moreCategories')}</p>
       )}
       <div className="flex items-center justify-between pt-2 border-t border-slate-700 text-sm font-medium">
-        <span className="text-slate-400">Total</span>
+        <span className="text-slate-400">{t('totalLabel')}</span>
         <span className="text-white tabular-nums">{formatARS(total)}</span>
       </div>
       <button
@@ -470,7 +474,7 @@ function ExistingBreakdownSummary({ transactions, onEdit }) {
         className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-1"
       >
         <Pencil size={11} />
-        Editar categorías
+        {t('editCategories')}
       </button>
     </div>
   )

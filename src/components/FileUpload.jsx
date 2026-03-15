@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Upload, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react'
 import { parseXLSX } from '../utils/xlsxParser'
 import useFinanceStore from '../store/useFinanceStore'
+import { useTranslation } from '../i18n/useTranslation'
 
 export default function FileUpload({ onImported }) {
   const [status, setStatus] = useState('idle') // idle | loading | success | error
@@ -9,13 +10,14 @@ export default function FileUpload({ onImported }) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef(null)
   const importData = useFinanceStore((s) => s.importData)
+  const t = useTranslation()
 
   const handleFile = async (file) => {
     if (!file) return
     const ext = file.name.split('.').pop().toLowerCase()
     if (!['xlsx', 'xls'].includes(ext)) {
       setStatus('error')
-      setMessage('Solo se aceptan archivos .xlsx o .xls')
+      setMessage(t('onlyXLS'))
       return
     }
     setStatus('loading')
@@ -25,7 +27,7 @@ export default function FileUpload({ onImported }) {
       const count = Object.keys(data).length
       importData(data)
       setStatus('success')
-      setMessage(`${count} meses importados correctamente`)
+      setMessage(`${count} ${t('monthsImported')}`)
       onImported?.()
     } catch (err) {
       setStatus('error')
@@ -63,7 +65,7 @@ export default function FileUpload({ onImported }) {
       {status === 'loading' && (
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Procesando archivo...</p>
+          <p className="text-slate-400 text-sm">{t('processing')}</p>
         </div>
       )}
 
@@ -71,7 +73,7 @@ export default function FileUpload({ onImported }) {
         <div className="flex flex-col items-center gap-3">
           <CheckCircle className="text-emerald-400" size={36} />
           <p className="text-emerald-400 font-medium">{message}</p>
-          <p className="text-slate-500 text-xs">Clic para importar otro archivo</p>
+          <p className="text-slate-500 text-xs">{t('clickImportAnother')}</p>
         </div>
       )}
 
@@ -79,7 +81,7 @@ export default function FileUpload({ onImported }) {
         <div className="flex flex-col items-center gap-3">
           <AlertCircle className="text-red-400" size={36} />
           <p className="text-red-400 font-medium">{message}</p>
-          <p className="text-slate-500 text-xs">Clic para intentar de nuevo</p>
+          <p className="text-slate-500 text-xs">{t('clickTryAgain')}</p>
         </div>
       )}
 
@@ -89,12 +91,12 @@ export default function FileUpload({ onImported }) {
             <FileSpreadsheet className="text-slate-400" size={28} />
           </div>
           <div>
-            <p className="text-slate-300 font-medium">Arrastrá tu archivo XLS</p>
-            <p className="text-slate-500 text-sm mt-1">o hacé clic para seleccionar</p>
+            <p className="text-slate-300 font-medium">{t('dragXLS')}</p>
+            <p className="text-slate-500 text-sm mt-1">{t('orClick')}</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-600">
             <Upload size={12} />
-            <span>Soporta .xlsx y .xls</span>
+            <span>{t('supportsFormats')}</span>
           </div>
         </div>
       )}

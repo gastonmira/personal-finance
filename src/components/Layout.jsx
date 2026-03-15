@@ -1,21 +1,24 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { LayoutDashboard, CalendarDays, PlusCircle, BarChart3 } from 'lucide-react'
-
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/mes', label: 'Por Mes', icon: CalendarDays },
-  { to: '/ingresar', label: 'Ingresar', icon: PlusCircle },
-  { to: '/reportes', label: 'Reportes', icon: BarChart3 },
-]
+import { useTranslation } from '../i18n/useTranslation'
 
 export default function Layout() {
+  const t = useTranslation()
+
+  const navItems = [
+    { to: '/', label: t('dashboardTitle'), icon: LayoutDashboard, end: true },
+    { to: '/mes', label: t('navMonthly'), icon: CalendarDays },
+    { to: '/ingresar', label: t('navAddData'), icon: PlusCircle },
+    { to: '/reportes', label: t('navReports'), icon: BarChart3 },
+  ]
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <aside className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
         <div className="px-5 py-6 border-b border-slate-800">
-          <h1 className="text-lg font-semibold text-white tracking-tight">Finanzas</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Personal</p>
+          <h1 className="text-lg font-semibold text-white tracking-tight">{t('appTitle')}</h1>
+          <p className="text-xs text-slate-500 mt-0.5">{t('appSubtitle')}</p>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map(({ to, label, icon: Icon, end }) => (

@@ -6,14 +6,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
+import { useTranslation } from '../i18n/useTranslation'
 
 const CARDS = ['santander', 'amex', 'provincia', 'uala']
-
-function shortMonth(key) {
-  const [year, month] = key.split('-')
-  const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-  return `${names[parseInt(month)-1]} ${year.slice(2)}`
-}
 
 function formatARSShort(v) {
   if (!v) return '—'
@@ -57,14 +52,24 @@ const CustomTooltipUSD = ({ active, payload, label }) => {
 export default function Reports() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
+  const t = useTranslation()
+
+  const monthNamesShort = t('monthNamesShort')
+
+  function shortMonth(key) {
+    const [year, month] = key.split('-')
+    return `${monthNamesShort[parseInt(month) - 1]} ${year.slice(2)}`
+  }
 
   if (sortedKeys.length === 0) {
     return (
       <div className="p-8 text-center text-slate-500 py-20">
-        <p>No hay datos. Importá tu XLS desde el Dashboard.</p>
+        <p>{t('noDataImport')}</p>
       </div>
     )
   }
+
+  const monthNames = t('monthNames')
 
   // Build chart data
   const chartData = sortedKeys
@@ -90,7 +95,6 @@ export default function Reports() {
     ? chartData.reduce((s, d) => s + d.totalXLS, 0) / chartData.length
     : 0
 
-  // Summary totals
   const totalARS = chartData.reduce((s, d) => s + d.totalXLS, 0)
   const totalUSDEarned = chartData.reduce((s, d) => s + (months[d.key]?.usdEarned ?? 0), 0)
   const totalUSDSold = chartData.reduce((s, d) => s + (months[d.key]?.usdSold ?? 0), 0)
@@ -98,31 +102,31 @@ export default function Reports() {
   return (
     <div className="p-8 max-w-5xl">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Reportes</h2>
-        <p className="text-slate-500 text-sm mt-1">Análisis de gastos e ingresos</p>
+        <h2 className="text-2xl font-bold text-white">{t('reportsTitle')}</h2>
+        <p className="text-slate-500 text-sm mt-1">{t('reportsSubtitle')}</p>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">Total ARS ({chartData.length} meses)</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalARSMonths')} ({chartData.length})</p>
           <p className="text-2xl font-semibold text-white mt-2">{formatARSShort(totalARS)}</p>
-          <p className="text-slate-500 text-xs mt-1">Prom. {formatARSShort(Math.round(avgTotal))}/mes</p>
+          <p className="text-slate-500 text-xs mt-1">{t('avgPerMonth')} {formatARSShort(Math.round(avgTotal))}{t('perMonth')}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">Total USD Cobrado</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDEarned')}</p>
           <p className="text-2xl font-semibold text-emerald-400 mt-2">{formatUSD(totalUSDEarned)}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">Total USD Vendido</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDSold')}</p>
           <p className="text-2xl font-semibold text-amber-400 mt-2">{formatUSD(totalUSDSold)}</p>
-          <p className="text-slate-500 text-xs mt-1">Balance: {formatUSD(totalUSDEarned - totalUSDSold)}</p>
+          <p className="text-slate-500 text-xs mt-1">{t('balanceLabel2')} {formatUSD(totalUSDEarned - totalUSDSold)}</p>
         </div>
       </div>
 
       {/* Chart 1: Stacked bars by card */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-        <h3 className="font-semibold text-white mb-6">Gastos ARS por Tarjeta</h3>
+        <h3 className="font-semibold text-white mb-6">{t('chartARSByCard')}</h3>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -141,7 +145,7 @@ export default function Reports() {
 
       {/* Chart 2: Total trend + avg reference */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-        <h3 className="font-semibold text-white mb-6">Tendencia Total Mensual</h3>
+        <h3 className="font-semibold text-white mb-6">{t('chartMonthlyTrend')}</h3>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -152,12 +156,12 @@ export default function Reports() {
               y={avgTotal}
               stroke="#475569"
               strokeDasharray="4 4"
-              label={{ value: 'Prom', position: 'right', fill: '#475569', fontSize: 11 }}
+              label={{ value: t('chartAvg'), position: 'right', fill: '#475569', fontSize: 11 }}
             />
             <Line
               type="monotone"
               dataKey="totalXLS"
-              name="Total XLS"
+              name={t('chartTotalXLS')}
               stroke="#3b82f6"
               strokeWidth={2}
               dot={{ fill: '#3b82f6', r: 4 }}
@@ -167,7 +171,7 @@ export default function Reports() {
               <Line
                 type="monotone"
                 dataKey="totalStatement"
-                name="Total Resúmenes"
+                name={t('chartTotalStatements')}
                 stroke="#8b5cf6"
                 strokeWidth={2}
                 strokeDasharray="5 3"
@@ -181,14 +185,14 @@ export default function Reports() {
       {/* Chart 3: USD earned vs sold */}
       {chartData.some((d) => d.usdEarned > 0) && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8">
-          <h3 className="font-semibold text-white mb-6">Dólares: Cobrado vs Vendido</h3>
+          <h3 className="font-semibold text-white mb-6">{t('chartDollars')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltipUSD />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-              <Legend formatter={(v) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{v === 'usdEarned' ? 'Cobrado' : v === 'usdSold' ? 'Vendido' : v}</span>} />
+              <Legend formatter={(v) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{v === 'usdEarned' ? t('legendEarned') : v === 'usdSold' ? t('legendSold') : v}</span>} />
               <Bar dataKey="usdEarned" name="usdEarned" fill="#10b981" radius={[4,4,0,0]} />
               <Bar dataKey="usdSold" name="usdSold" fill="#f59e0b" radius={[4,4,0,0]} />
             </BarChart>
@@ -199,18 +203,18 @@ export default function Reports() {
       {/* Summary table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-800">
-          <h3 className="font-semibold text-white">Tabla Resumen</h3>
+          <h3 className="font-semibold text-white">{t('summaryTable')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-800">
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Mes</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Total XLS</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Resúmenes</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">USD Cobrado</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">USD Vendido</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Balance USD</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colMonth')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colTotalXLS')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colStatements')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDEarned')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDSold')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDBalance')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -221,7 +225,7 @@ export default function Reports() {
                 const bal = (d.usdEarned ?? 0) - (d.usdSold ?? 0)
                 return (
                   <tr key={key} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-5 py-3 text-sm text-slate-200">{formatMonthKey(key)}</td>
+                    <td className="px-5 py-3 text-sm text-slate-200">{formatMonthKey(key, monthNames)}</td>
                     <td className="px-5 py-3 text-right text-sm text-slate-300 tabular-nums">{formatARS(d.totalXLS)}</td>
                     <td className="px-5 py-3 text-right text-sm tabular-nums">
                       {stmt > 0 ? <span className="text-blue-400">{formatARS(stmt)}</span> : <span className="text-slate-600">—</span>}

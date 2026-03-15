@@ -2,18 +2,21 @@ import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { buildTransactions } from '../utils/statementParser'
 import { categorizeTransactions } from '../utils/categorizer'
-
-const FIELD_LABELS = {
-  dateIdx: 'Fecha',
-  descIdx: 'Descripción',
-  amountIdx: 'Monto',
-}
+import { useTranslation } from '../i18n/useTranslation'
 
 /**
  * Shows the detected columns and lets the user map them to date/desc/amount.
  * On confirm, calls onDone(transactions[]) with categorized transactions.
  */
 export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
+  const t = useTranslation()
+
+  const FIELD_LABELS = {
+    dateIdx: t('fieldDate'),
+    descIdx: t('fieldDescription'),
+    amountIdx: t('fieldAmount'),
+  }
+
   // Try to auto-detect columns by common header names
   const autoDetect = () => {
     const lower = headers.map((h) => h.toLowerCase())
@@ -47,10 +50,11 @@ export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
     try {
       const raw = buildTransactions(rows, mapping)
       if (raw.length === 0) {
-        setError('No se encontraron transacciones válidas. Verificá las columnas seleccionadas.')
+        setError(t('noValidTransactions'))
         return
       }
-      const categorized = categorizeTransactions(raw)
+      const localeCategories = t('categories')
+      const categorized = categorizeTransactions(raw, localeCategories)
       onDone(categorized)
     } catch (e) {
       setError(e.message)
@@ -62,8 +66,8 @@ export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
       {/* Column selectors */}
       <div>
         <p className="text-sm text-slate-400 mb-4">
-          Se detectaron <span className="text-white font-medium">{headers.length} columnas</span> y{' '}
-          <span className="text-white font-medium">{rows.length} filas</span>. Seleccioná cuál columna corresponde a cada campo:
+          <span className="text-white font-medium">{headers.length}</span> {t('columnMapperInstruction')}{' '}
+          <span className="text-white font-medium">{rows.length}</span> {t('columnMapperInstruction2')}
         </p>
         <div className="grid grid-cols-3 gap-4">
           {Object.entries(FIELD_LABELS).map(([field, label]) => (
@@ -81,7 +85,7 @@ export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
               >
                 {headers.map((h, i) => (
                   <option key={i} value={i}>
-                    {i}: {h || `(sin nombre)`}
+                    {i}: {h || t('noName')}
                   </option>
                 ))}
               </select>
@@ -93,13 +97,13 @@ export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
       {/* Preview table */}
       <div>
         <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">
-          Vista previa (primeras 5 filas)
+          {t('preview')}
         </p>
         <div className="overflow-x-auto rounded-lg border border-slate-800">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-800/50">
-                {['Fecha', 'Descripción', 'Monto'].map((h) => (
+                {[t('fieldDate'), t('fieldDescription'), t('fieldAmount')].map((h) => (
                   <th key={h} className="text-left px-3 py-2 text-slate-500 font-medium">
                     {h}
                   </th>
@@ -129,13 +133,13 @@ export default function ColumnMapper({ headers, rows, onDone, onCancel }) {
           onClick={onCancel}
           className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
         >
-          Cancelar
+          {t('cancel')}
         </button>
         <button
           onClick={handleConfirm}
           className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
         >
-          Categorizar
+          {t('categorize')}
           <ArrowRight size={15} />
         </button>
       </div>

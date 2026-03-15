@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
 import { formatARS, formatUSD, formatMonthKey, CARD_LABELS, CARD_COLORS } from '../utils/format'
+import { useTranslation } from '../i18n/useTranslation'
 
 function getCurrentMonthKey() {
   const now = new Date()
@@ -14,6 +15,7 @@ export default function MonthlyView() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
   const navigate = useNavigate()
+  const t = useTranslation()
 
   const defaultKey = sortedKeys.includes(getCurrentMonthKey())
     ? getCurrentMonthKey()
@@ -37,26 +39,28 @@ export default function MonthlyView() {
       ? (data.usdEarned ?? 0) - (data.usdSold ?? 0)
       : null
 
+  const monthNames = t('monthNames')
+
   return (
     <div className="p-8 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white">Por Mes</h2>
-          <p className="text-slate-500 text-sm mt-1">Detalle de gastos por tarjeta</p>
+          <h2 className="text-2xl font-bold text-white">{t('monthlyTitle')}</h2>
+          <p className="text-slate-500 text-sm mt-1">{t('monthlySubtitle')}</p>
         </div>
         <button
           onClick={() => navigate('/ingresar', { state: { month: activeMonth } })}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
         >
           <PlusCircle size={16} />
-          Cargar datos
+          {t('loadData')}
         </button>
       </div>
 
       {sortedKeys.length === 0 ? (
         <div className="text-center py-20 text-slate-500">
-          <p>No hay datos. Importá tu XLS desde el Dashboard.</p>
+          <p>{t('noDataImport')}</p>
         </div>
       ) : (
         <>
@@ -70,7 +74,7 @@ export default function MonthlyView() {
               <ChevronLeft size={18} />
             </button>
             <h3 className="text-xl font-semibold text-white min-w-48 text-center">
-              {formatMonthKey(activeMonth)}
+              {formatMonthKey(activeMonth, monthNames)}
             </h3>
             <button
               onClick={() => nextMonth && setActiveMonth(nextMonth)}
@@ -93,7 +97,7 @@ export default function MonthlyView() {
                     : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {formatMonthKey(key)}
+                {formatMonthKey(key, monthNames)}
               </button>
             ))}
           </div>
@@ -103,15 +107,15 @@ export default function MonthlyView() {
               {/* Cards table */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-slate-800">
-                  <h4 className="font-semibold text-white">Detalle por Tarjeta</h4>
+                  <h4 className="font-semibold text-white">{t('cardDetail')}</h4>
                 </div>
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-800">
-                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Tarjeta</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Gastos XLS</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Resumen</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Diferencia</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colCard')}</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colXLSExpenses')}</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colStatementAmount')}</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colDifference')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
@@ -139,7 +143,7 @@ export default function MonthlyView() {
                               <span className="text-blue-400">{formatARS(stmtAmt)}</span>
                             ) : (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-500">
-                                Pendiente
+                                {t('pending')}
                               </span>
                             )}
                           </td>
@@ -158,7 +162,7 @@ export default function MonthlyView() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-slate-700 bg-slate-800/30">
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-300">Total</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-300">{t('total')}</td>
                       <td className="px-6 py-4 text-right text-sm font-semibold text-white tabular-nums">
                         {formatARS(data.totalXLS)}
                       </td>
@@ -180,18 +184,18 @@ export default function MonthlyView() {
 
               {/* USD summary */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <h4 className="font-semibold text-white mb-4">Dólares del Mes</h4>
+                <h4 className="font-semibold text-white mb-4">{t('monthlyDollars')}</h4>
                 <div className="grid grid-cols-3 gap-6">
                   <div>
-                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Cobrado</p>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('earned')}</p>
                     <p className="text-2xl font-semibold text-emerald-400">{formatUSD(data.usdEarned)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Vendido a ARS</p>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('soldToARS')}</p>
                     <p className="text-2xl font-semibold text-amber-400">{formatUSD(data.usdSold)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Balance</p>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('balance')}</p>
                     <p className={`text-2xl font-semibold ${usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                       {usdBalance !== null ? formatUSD(usdBalance) : '—'}
                     </p>
@@ -201,7 +205,7 @@ export default function MonthlyView() {
             </>
           ) : (
             <div className="text-center py-16 text-slate-500">
-              No hay datos para {formatMonthKey(activeMonth)}
+              {t('noDataForMonth')} {formatMonthKey(activeMonth, monthNames)}
             </div>
           )}
         </>
