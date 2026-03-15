@@ -375,6 +375,14 @@ export default function EntryForm() {
                     {t('addAnotherStatement')}
                   </button>
                   <button
+                    onClick={() => setShowSmsPaste((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
+                               text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <MessageSquare size={15} />
+                    {t('pasteSms')}
+                  </button>
+                  <button
                     onClick={() => triggerUpload('replace')}
                     className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
                                text-slate-400 hover:text-slate-200 rounded-lg text-sm font-medium transition-colors"
@@ -391,17 +399,37 @@ export default function EntryForm() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => triggerUpload('replace')}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
-                             text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Upload size={15} />
-                  {t('uploadCSV')}
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => triggerUpload('replace')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
+                               text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Upload size={15} />
+                    {t('uploadCSV')}
+                  </button>
+                  <button
+                    onClick={() => setShowSmsPaste((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
+                               text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <MessageSquare size={15} />
+                    {t('pasteSms')}
+                  </button>
+                </div>
               )}
               {parseError && (
                 <p className="text-red-400 text-xs mt-2">{parseError}</p>
+              )}
+
+              {/* SMS paste panel */}
+              {showSmsPaste && (
+                <div className="mt-4">
+                  <SmsPaste
+                    onDone={handleSmsDone}
+                    onClose={() => setShowSmsPaste(false)}
+                  />
+                </div>
               )}
             </div>
           </div>

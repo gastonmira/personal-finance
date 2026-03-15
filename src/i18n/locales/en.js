@@ -140,6 +140,14 @@ const en = {
   // Categories
   categories: ['Supermarket', 'Restaurants', 'Transport', 'Services', 'Health', 'Entertainment', 'Clothing', 'Technology', 'Education', 'Other'],
   categoryOther: 'Other',
+
+  // SMS paste
+  pasteSms: 'Paste SMS',
+  smsTitle: 'Paste bank notifications',
+  smsPastePlaceholder: 'Paste one or more bank notifications here...',
+  smsNoMatch: 'No transactions detected. Make sure the text matches a supported bank notification format.',
+  smsAddTransactions: 'Add {n} transaction(s)',
+  smsBankDetected: 'Bank',
 }
 
 export default en
