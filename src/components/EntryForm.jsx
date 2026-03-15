@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2, MessageSquare } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
 import { formatMonthKey, formatARS, CARD_LABELS, CARD_COLORS } from '../utils/format'
 import { parseStatementFile } from '../utils/statementParser'
 import ColumnMapper from './ColumnMapper'
 import TransactionList from './TransactionList'
+import SmsPaste from './SmsPaste'
 import { useTranslation } from '../i18n/useTranslation'
 
 const CARDS = ['santander', 'amex', 'provincia', 'uala']
@@ -78,6 +79,7 @@ export default function EntryForm() {
   const [parsedFile, setParsedFile] = useState(null)         // { headers, rows }
   const [pendingTxs, setPendingTxs] = useState(null)         // categorized transactions
   const [parseError, setParseError] = useState(null)
+  const [showSmsPaste, setShowSmsPaste] = useState(false)
   const fileInputRef = useRef(null)
 
   // Pre-fill when month changes
@@ -172,6 +174,11 @@ export default function EntryForm() {
 
   const handleClearTransactions = () => {
     setTransactions(selectedMonth, [])
+  }
+
+  const handleSmsDone = (transactions) => {
+    appendTransactions(selectedMonth, transactions)
+    setShowSmsPaste(false)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
