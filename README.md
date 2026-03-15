@@ -4,6 +4,10 @@ A personal finance tracker for managing and categorizing bank statement transact
 
 The app automatically detects your browser's language and renders in **English** or **Spanish** accordingly.
 
+## Built with AI
+
+This project was developed with [Claude Code](https://claude.ai/code) by Anthropic. All features — architecture, components, i18n, categorization engine, and more — were implemented through AI-assisted pair programming.
+
 ---
 
 ## Features
@@ -83,12 +87,6 @@ App runs at `http://localhost:5173` by default.
 ![Add Data](public/screenshots/add-data.png)
 
 ![Reports](public/screenshots/reports.png)
-
----
-
-## Built with AI
-
-This project was developed with [Claude Code](https://claude.ai/code) by Anthropic. All features — architecture, components, i18n, categorization engine, and more — were implemented through AI-assisted pair programming.
 
 ---
 
