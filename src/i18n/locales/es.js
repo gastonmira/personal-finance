@@ -140,6 +140,15 @@ const es = {
   // Categories
   categories: ['Supermercado', 'Restaurantes', 'Transporte', 'Servicios', 'Salud', 'Entretenimiento', 'Indumentaria', 'Tecnología', 'Educación', 'Otros'],
   categoryOther: 'Otros',
+
+  // SMS paste
+  pasteSms: 'Pegar SMS',
+  smsTitle: 'Pegá notificaciones del banco',
+  smsPastePlaceholder: 'Pegá una o varias notificaciones del banco acá...',
+  smsNoMatch: 'No se detectaron transacciones. Asegurate de que el texto corresponda a una notificación de banco soportado.',
+  smsAddTransactions: 'Agregar {n} transacción(es)',
+  smsBankDetected: 'Banco',
+  smsSavedConfirm: 'Transacciones guardadas automáticamente',
 }
 
 export default es

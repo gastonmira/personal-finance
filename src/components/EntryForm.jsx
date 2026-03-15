@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2, MessageSquare } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
 import { formatMonthKey, formatARS, CARD_LABELS, CARD_COLORS } from '../utils/format'
 import { parseStatementFile } from '../utils/statementParser'
 import ColumnMapper from './ColumnMapper'
 import TransactionList from './TransactionList'
+import SmsPaste from './SmsPaste'
 import { useTranslation } from '../i18n/useTranslation'
 
 const CARDS = ['santander', 'amex', 'provincia', 'uala']
@@ -78,6 +79,8 @@ export default function EntryForm() {
   const [parsedFile, setParsedFile] = useState(null)         // { headers, rows }
   const [pendingTxs, setPendingTxs] = useState(null)         // categorized transactions
   const [parseError, setParseError] = useState(null)
+  const [showSmsPaste, setShowSmsPaste] = useState(false)
+  const [smsSaved, setSmsSaved] = useState(false)
   const fileInputRef = useRef(null)
 
   // Pre-fill when month changes
@@ -172,6 +175,13 @@ export default function EntryForm() {
 
   const handleClearTransactions = () => {
     setTransactions(selectedMonth, [])
+  }
+
+  const handleSmsDone = (transactions) => {
+    appendTransactions(selectedMonth, transactions)
+    setShowSmsPaste(false)
+    setSmsSaved(true)
+    setTimeout(() => setSmsSaved(false), 3000)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -368,6 +378,14 @@ export default function EntryForm() {
                     {t('addAnotherStatement')}
                   </button>
                   <button
+                    onClick={() => setShowSmsPaste((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
+                               text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <MessageSquare size={15} />
+                    {t('pasteSms')}
+                  </button>
+                  <button
                     onClick={() => triggerUpload('replace')}
                     className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
                                text-slate-400 hover:text-slate-200 rounded-lg text-sm font-medium transition-colors"
@@ -384,17 +402,44 @@ export default function EntryForm() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => triggerUpload('replace')}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
-                             text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Upload size={15} />
-                  {t('uploadCSV')}
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => triggerUpload('replace')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700
+                               text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Upload size={15} />
+                    {t('uploadCSV')}
+                  </button>
+                  <button
+                    onClick={() => setShowSmsPaste((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
+                               text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <MessageSquare size={15} />
+                    {t('pasteSms')}
+                  </button>
+                </div>
               )}
               {parseError && (
                 <p className="text-red-400 text-xs mt-2">{parseError}</p>
+              )}
+
+              {/* SMS paste panel */}
+              {showSmsPaste && (
+                <div className="mt-4">
+                  <SmsPaste
+                    onDone={handleSmsDone}
+                    onClose={() => setShowSmsPaste(false)}
+                  />
+                </div>
+              )}
+
+              {smsSaved && (
+                <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-emerald-600/20 border border-emerald-600/30 rounded-lg text-emerald-400 text-sm">
+                  <CheckCircle size={15} />
+                  {t('smsSavedConfirm')}
+                </div>
               )}
             </div>
           </div>

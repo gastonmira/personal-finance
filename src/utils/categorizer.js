@@ -47,7 +47,7 @@ const RULES = [
   {
     category: 'Restaurantes',
     keywords: [
-      'mcdonalds', 'mc donald', 'burger king', 'wendy', 'kfc', 'subway',
+      'mcdonalds', 'mcdonald', 'mc donald', 'burger king', 'wendy', 'kfc', 'subway',
       'pizza', 'sushi', 'restaurant', 'restaurante', 'cafe', 'cafeteria',
       'cafetería', 'bar ', 'parrilla', 'bodegon', 'bodegón', 'mostaza',
       'rappi', 'pedidos ya', 'pedidosya', 'rappi', 'delivery', 'dominos',
@@ -140,7 +140,7 @@ export function categorizeTransactions(transactions, localeCategories) {
   }))
 }
 
-function detectCategory(description, localeCategories) {
+export function detectCategory(description, localeCategories) {
   const fallback = localeCategories ? localeCategories[localeCategories.length - 1] : 'Otros'
   if (!description) return fallback
   const lower = description.toLowerCase()
