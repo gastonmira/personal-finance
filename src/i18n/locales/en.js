@@ -148,6 +148,7 @@ const en = {
   smsNoMatch: 'No transactions detected. Make sure the text matches a supported bank notification format.',
   smsAddTransactions: 'Add {n} transaction(s)',
   smsBankDetected: 'Bank',
+  smsSavedConfirm: 'Transactions saved automatically',
 }
 
 export default en

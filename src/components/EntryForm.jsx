@@ -80,6 +80,7 @@ export default function EntryForm() {
   const [pendingTxs, setPendingTxs] = useState(null)         // categorized transactions
   const [parseError, setParseError] = useState(null)
   const [showSmsPaste, setShowSmsPaste] = useState(false)
+  const [smsSaved, setSmsSaved] = useState(false)
   const fileInputRef = useRef(null)
 
   // Pre-fill when month changes
@@ -179,6 +180,8 @@ export default function EntryForm() {
   const handleSmsDone = (transactions) => {
     appendTransactions(selectedMonth, transactions)
     setShowSmsPaste(false)
+    setSmsSaved(true)
+    setTimeout(() => setSmsSaved(false), 3000)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -429,6 +432,13 @@ export default function EntryForm() {
                     onDone={handleSmsDone}
                     onClose={() => setShowSmsPaste(false)}
                   />
+                </div>
+              )}
+
+              {smsSaved && (
+                <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-emerald-600/20 border border-emerald-600/30 rounded-lg text-emerald-400 text-sm">
+                  <CheckCircle size={15} />
+                  {t('smsSavedConfirm')}
                 </div>
               )}
             </div>

@@ -148,6 +148,7 @@ const es = {
   smsNoMatch: 'No se detectaron transacciones. Asegurate de que el texto corresponda a una notificación de banco soportado.',
   smsAddTransactions: 'Agregar {n} transacción(es)',
   smsBankDetected: 'Banco',
+  smsSavedConfirm: 'Transacciones guardadas automáticamente',
 }
 
 export default es
