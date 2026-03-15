@@ -1,0 +1,211 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react'
+import useFinanceStore from '../store/useFinanceStore'
+import { useShallow } from 'zustand/react/shallow'
+import { formatARS, formatUSD, formatMonthKey, CARD_LABELS, CARD_COLORS } from '../utils/format'
+
+function getCurrentMonthKey() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+export default function MonthlyView() {
+  const months = useFinanceStore((s) => s.months)
+  const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
+  const navigate = useNavigate()
+
+  const defaultKey = sortedKeys.includes(getCurrentMonthKey())
+    ? getCurrentMonthKey()
+    : sortedKeys[sortedKeys.length - 1] ?? getCurrentMonthKey()
+
+  const [activeMonth, setActiveMonth] = useState(defaultKey)
+
+  const currentIdx = sortedKeys.indexOf(activeMonth)
+  const prevMonth = currentIdx > 0 ? sortedKeys[currentIdx - 1] : null
+  const nextMonth = currentIdx < sortedKeys.length - 1 ? sortedKeys[currentIdx + 1] : null
+
+  const data = months[activeMonth]
+  const cards = ['santander', 'amex', 'provincia', 'uala']
+
+  const totalStatements = data
+    ? Object.values(data.statements ?? {}).reduce((s, v) => s + (v ?? 0), 0)
+    : 0
+
+  const usdBalance =
+    data && (data.usdEarned !== null || data.usdSold !== null)
+      ? (data.usdEarned ?? 0) - (data.usdSold ?? 0)
+      : null
+
+  return (
+    <div className="p-8 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Por Mes</h2>
+          <p className="text-slate-500 text-sm mt-1">Detalle de gastos por tarjeta</p>
+        </div>
+        <button
+          onClick={() => navigate('/ingresar', { state: { month: activeMonth } })}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <PlusCircle size={16} />
+          Cargar datos
+        </button>
+      </div>
+
+      {sortedKeys.length === 0 ? (
+        <div className="text-center py-20 text-slate-500">
+          <p>No hay datos. Importá tu XLS desde el Dashboard.</p>
+        </div>
+      ) : (
+        <>
+          {/* Month navigator */}
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => prevMonth && setActiveMonth(prevMonth)}
+              disabled={!prevMonth}
+              className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 hover:text-white transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <h3 className="text-xl font-semibold text-white min-w-48 text-center">
+              {formatMonthKey(activeMonth)}
+            </h3>
+            <button
+              onClick={() => nextMonth && setActiveMonth(nextMonth)}
+              disabled={!nextMonth}
+              className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 hover:text-white transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Month selector pills */}
+          <div className="flex gap-2 flex-wrap mb-8">
+            {sortedKeys.map((key) => (
+              <button
+                key={key}
+                onClick={() => setActiveMonth(key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  key === activeMonth
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {formatMonthKey(key)}
+              </button>
+            ))}
+          </div>
+
+          {data ? (
+            <>
+              {/* Cards table */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-6">
+                <div className="px-6 py-4 border-b border-slate-800">
+                  <h4 className="font-semibold text-white">Detalle por Tarjeta</h4>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Tarjeta</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Gastos XLS</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Resumen</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {cards.map((card) => {
+                      const xlsAmt = data.cards?.[card] ?? null
+                      const stmtAmt = data.statements?.[card] ?? null
+                      if (!xlsAmt && !stmtAmt) return null
+                      const diff = xlsAmt !== null && stmtAmt !== null ? stmtAmt - xlsAmt : null
+                      return (
+                        <tr key={card} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: CARD_COLORS[card] }}
+                              />
+                              <span className="text-slate-200 text-sm font-medium">{CARD_LABELS[card]}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm text-slate-300 tabular-nums">
+                            {formatARS(xlsAmt)}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm tabular-nums">
+                            {stmtAmt !== null ? (
+                              <span className="text-blue-400">{formatARS(stmtAmt)}</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-500">
+                                Pendiente
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm tabular-nums">
+                            {diff !== null ? (
+                              <span className={diff > 0 ? 'text-red-400' : diff < 0 ? 'text-emerald-400' : 'text-slate-500'}>
+                                {diff > 0 ? '+' : ''}{formatARS(diff)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-700">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-slate-700 bg-slate-800/30">
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-300">Total</td>
+                      <td className="px-6 py-4 text-right text-sm font-semibold text-white tabular-nums">
+                        {formatARS(data.totalXLS)}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-semibold text-blue-400 tabular-nums">
+                        {totalStatements > 0 ? formatARS(totalStatements) : '—'}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-semibold tabular-nums">
+                        {totalStatements > 0 && data.totalXLS ? (
+                          <span className={totalStatements > data.totalXLS ? 'text-red-400' : 'text-emerald-400'}>
+                            {totalStatements > data.totalXLS ? '+' : ''}
+                            {formatARS(totalStatements - data.totalXLS)}
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* USD summary */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <h4 className="font-semibold text-white mb-4">Dólares del Mes</h4>
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Cobrado</p>
+                    <p className="text-2xl font-semibold text-emerald-400">{formatUSD(data.usdEarned)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Vendido a ARS</p>
+                    <p className="text-2xl font-semibold text-amber-400">{formatUSD(data.usdSold)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Balance</p>
+                    <p className={`text-2xl font-semibold ${usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {usdBalance !== null ? formatUSD(usdBalance) : '—'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16 text-slate-500">
+              No hay datos para {formatMonthKey(activeMonth)}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
