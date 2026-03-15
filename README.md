@@ -86,6 +86,12 @@ App runs at `http://localhost:5173` by default.
 
 ---
 
+## Built with AI
+
+This project was developed with [Claude Code](https://claude.ai/code) by Anthropic. All features — architecture, components, i18n, categorization engine, and more — were implemented through AI-assisted pair programming.
+
+---
+
 ## License
 
 MIT
