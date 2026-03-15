@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle, AlertCircle, Save, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { formatARS } from '../utils/format'
 import { useTranslation } from '../i18n/useTranslation'
+import { normalizeCategory } from '../i18n/normalizeCategory'
 
 // Colors by category index (same order as CATEGORIES)
 const CATEGORY_COLORS = [
@@ -26,11 +27,13 @@ const CATEGORY_COLORS = [
  *   onCancel()        - go back
  */
 export default function TransactionList({ transactions: initial, statementTotal, onSave, onCancel }) {
-  const [txs, setTxs] = useState(initial)
-  const [collapsed, setCollapsed] = useState(false)
   const t = useTranslation()
-
   const localeCategories = t('categories')
+
+  const [txs, setTxs] = useState(() =>
+    initial.map((tx) => ({ ...tx, category: normalizeCategory(tx.category, localeCategories) }))
+  )
+  const [collapsed, setCollapsed] = useState(false)
 
   const total = txs.reduce((s, tx) => s + tx.amount, 0)
   const diff = statementTotal != null ? total - statementTotal : null

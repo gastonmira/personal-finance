@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import FileUpload from './FileUpload'
 import { formatARS, formatUSD, toDisplayMonth, CARD_LABELS, CARD_COLORS } from '../utils/format'
 import { useTranslation } from '../i18n/useTranslation'
+import { normalizeCategory } from '../i18n/normalizeCategory'
 
 // Colors by category index (same order as CATEGORIES)
 const CATEGORY_COLORS = [
@@ -37,7 +38,8 @@ function CategoryBreakdown({ transactions, onManage, t }) {
   }
 
   const summary = transactions.reduce((acc, tx) => {
-    acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount
+    const cat = normalizeCategory(tx.category, localeCategories)
+    acc[cat] = (acc[cat] ?? 0) + tx.amount
     return acc
   }, {})
   const total = transactions.reduce((s, tx) => s + tx.amount, 0)

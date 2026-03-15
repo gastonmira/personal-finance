@@ -76,7 +76,13 @@ App runs at `http://localhost:5173` by default.
 
 ## Screenshots
 
-> Add screenshots here once deployed or running locally.
+![Dashboard](public/screenshots/dashboard.png)
+
+![Monthly View](public/screenshots/monthly.png)
+
+![Add Data](public/screenshots/add-data.png)
+
+![Reports](public/screenshots/reports.png)
 
 ---
 
