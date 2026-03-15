@@ -2,7 +2,7 @@
 
 A personal finance tracker for managing and categorizing bank statement transactions across multiple cards and months. Built as a fully client-side app — no backend, no accounts, no data leaves your browser.
 
-> UI is in Spanish (Argentine market context: ARS + USD tracking, cards like Santander, Amex, Provincia, Uala).
+The app automatically detects your browser's language and renders in **English** or **Spanish** accordingly.
 
 ---
 

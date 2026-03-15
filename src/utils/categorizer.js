@@ -7,6 +7,7 @@
  *   export async function categorizeWithLLM(transactions, apiKey) { ... }
  */
 
+// Default categories in Spanish. Pass locale categories for translated UI.
 export const CATEGORIES = [
   'Supermercado',
   'Restaurantes',
@@ -19,6 +20,19 @@ export const CATEGORIES = [
   'Educación',
   'Otros',
 ]
+
+// Internal rule index maps to CATEGORIES position (0-based)
+const RULE_INDEX = {
+  Supermercado: 0,
+  Restaurantes: 1,
+  Transporte: 2,
+  Servicios: 3,
+  Salud: 4,
+  Entretenimiento: 5,
+  Indumentaria: 6,
+  'Tecnología': 7,
+  'Educación': 8,
+}
 
 const RULES = [
   {
@@ -115,23 +129,29 @@ const RULES = [
 /**
  * Categorizes a list of raw transactions using keyword rules.
  * @param {Array<{ date: string, description: string, amount: number }>} transactions
+ * @param {string[]} [localeCategories] - optional locale-aware category names (same order as CATEGORIES)
  * @returns {Array<{ id: string, date: string, description: string, amount: number, category: string }>}
  */
-export function categorizeTransactions(transactions) {
+export function categorizeTransactions(transactions, localeCategories) {
   return transactions.map((tx, idx) => ({
     id: `tx-${Date.now()}-${idx}`,
     ...tx,
-    category: detectCategory(tx.description),
+    category: detectCategory(tx.description, localeCategories),
   }))
 }
 
-function detectCategory(description) {
-  if (!description) return 'Otros'
+function detectCategory(description, localeCategories) {
+  const fallback = localeCategories ? localeCategories[localeCategories.length - 1] : 'Otros'
+  if (!description) return fallback
   const lower = description.toLowerCase()
   for (const rule of RULES) {
     if (rule.keywords.some((kw) => lower.includes(kw))) {
+      if (localeCategories) {
+        const idx = RULE_INDEX[rule.category]
+        return idx !== undefined ? localeCategories[idx] : fallback
+      }
       return rule.category
     }
   }
-  return 'Otros'
+  return fallback
 }
