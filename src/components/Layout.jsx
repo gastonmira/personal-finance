@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, PlusCircle, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, PlusCircle, BarChart3, Settings } from 'lucide-react'
 import { useTranslation } from '../i18n/useTranslation'
 
 export default function Layout() {
@@ -10,6 +10,7 @@ export default function Layout() {
     { to: '/mes', label: t('navMonthly'), icon: CalendarDays },
     { to: '/ingresar', label: t('navAddData'), icon: PlusCircle },
     { to: '/reportes', label: t('navReports'), icon: BarChart3 },
+    { to: '/configuracion', label: t('navSettings'), icon: Settings },
   ]
 
   return (

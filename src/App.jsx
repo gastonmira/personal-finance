@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard'
 import MonthlyView from './components/MonthlyView'
 import EntryForm from './components/EntryForm'
 import Reports from './components/Reports'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="mes" element={<MonthlyView />} />
           <Route path="ingresar" element={<EntryForm />} />
           <Route path="reportes" element={<Reports />} />
+          <Route path="configuracion" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
