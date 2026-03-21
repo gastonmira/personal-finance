@@ -8,5 +8,9 @@ export function useTranslation() {
   const detected = navigator.language?.startsWith('es') ? 'es' : 'en'
   const lang = override ?? detected
   const strings = locales[lang] ?? locales.en
-  return (key) => strings[key] ?? key
+  return (key, vars) => {
+    const val = strings[key] ?? key
+    if (!vars || typeof val !== 'string') return val
+    return val.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`)
+  }
 }

@@ -6,40 +6,7 @@
  *   parseSmsBlock(text)       → Array of parsed transactions (handles multi-SMS paste)
  */
 
-// ── Amount parsing ────────────────────────────────────────────────────────────
-
-/**
- * Convert Argentine number format to a JS float.
- * "$20.010,00" → 20010.00
- * "$132.838,52" → 132838.52
- * "$1.500" (no decimal) → 1500
- */
-function parseArgentineAmount(raw) {
-  if (!raw) return null
-  // Remove currency symbol and whitespace
-  const cleaned = raw.replace(/[$\s]/g, '')
-  // Argentine format: dot = thousands separator, comma = decimal separator
-  // Remove thousand-separator dots, then replace decimal comma with dot
-  const normalized = cleaned.replace(/\./g, '').replace(',', '.')
-  const value = parseFloat(normalized)
-  return isNaN(value) ? null : value
-}
-
-// ── Date parsing ──────────────────────────────────────────────────────────────
-
-/**
- * Extract a DD/MM/YYYY date from text and return it as YYYY-MM-DD.
- * Falls back to today's date if not found.
- */
-function extractDate(text) {
-  const match = text.match(/(\d{2})\/(\d{2})\/(\d{4})/)
-  if (match) {
-    const [, day, month, year] = match
-    return `${year}-${month}-${day}`
-  }
-  // Fallback: today in YYYY-MM-DD
-  return new Date().toISOString().slice(0, 10)
-}
+import { parseArgentineAmount, extractDate } from './parseHelpers'
 
 // ── Bank patterns ─────────────────────────────────────────────────────────────
 

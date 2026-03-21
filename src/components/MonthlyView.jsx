@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import { formatARS, formatUSD, formatMonthKey, CARD_LABELS, CARD_COLORS } from '../utils/format'
+import { formatARS, formatForeignCurrency, formatMonthKey } from '../utils/format'
 import { useTranslation } from '../i18n/useTranslation'
 
 function getCurrentMonthKey() {
@@ -14,6 +14,8 @@ function getCurrentMonthKey() {
 export default function MonthlyView() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
+  const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency ?? 'USD')
   const navigate = useNavigate()
   const t = useTranslation()
 
@@ -28,7 +30,6 @@ export default function MonthlyView() {
   const nextMonth = currentIdx < sortedKeys.length - 1 ? sortedKeys[currentIdx + 1] : null
 
   const data = months[activeMonth]
-  const cards = ['santander', 'amex', 'provincia', 'uala']
 
   const totalStatements = data
     ? Object.values(data.statements ?? {}).reduce((s, v) => s + (v ?? 0), 0)
@@ -40,6 +41,11 @@ export default function MonthlyView() {
       : null
 
   const monthNames = t('monthNames')
+
+  // Only show cards that have statement data for the active month
+  const cardsWithData = cards.filter(
+    (card) => data?.statements?.[card.id] != null
+  )
 
   return (
     <div className="p-8 max-w-4xl">
@@ -105,82 +111,56 @@ export default function MonthlyView() {
           {data ? (
             <>
               {/* Cards table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-6">
-                <div className="px-6 py-4 border-b border-slate-800">
-                  <h4 className="font-semibold text-white">{t('cardDetail')}</h4>
+              {cardsWithData.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-6">
+                  <div className="px-6 py-4 border-b border-slate-800">
+                    <h4 className="font-semibold text-white">{t('cardDetail')}</h4>
+                  </div>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-800">
+                        <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colCard')}</th>
+                        <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colStatementAmount')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {cardsWithData.map((card) => {
+                        const stmtAmt = data.statements?.[card.id] ?? null
+                        return (
+                          <tr key={card.id} className="hover:bg-slate-800/30 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{ backgroundColor: card.color }}
+                                />
+                                <span className="text-slate-200 text-sm font-medium">{card.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right text-sm tabular-nums">
+                              {stmtAmt !== null ? (
+                                <span className="text-blue-400">{formatARS(stmtAmt)}</span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-500">
+                                  {t('pending')}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-slate-700 bg-slate-800/30">
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-300">{t('total')}</td>
+                        <td className="px-6 py-4 text-right text-sm font-semibold text-blue-400 tabular-nums">
+                          {totalStatements > 0 ? formatARS(totalStatements) : '—'}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-800">
-                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colCard')}</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colXLSExpenses')}</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colStatementAmount')}</th>
-                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colDifference')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/50">
-                    {cards.map((card) => {
-                      const xlsAmt = data.cards?.[card] ?? null
-                      const stmtAmt = data.statements?.[card] ?? null
-                      if (!xlsAmt && !stmtAmt) return null
-                      const diff = xlsAmt !== null && stmtAmt !== null ? stmtAmt - xlsAmt : null
-                      return (
-                        <tr key={card} className="hover:bg-slate-800/30 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-2.5 h-2.5 rounded-full"
-                                style={{ backgroundColor: CARD_COLORS[card] }}
-                              />
-                              <span className="text-slate-200 text-sm font-medium">{CARD_LABELS[card]}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm text-slate-300 tabular-nums">
-                            {formatARS(xlsAmt)}
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm tabular-nums">
-                            {stmtAmt !== null ? (
-                              <span className="text-blue-400">{formatARS(stmtAmt)}</span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-500">
-                                {t('pending')}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm tabular-nums">
-                            {diff !== null ? (
-                              <span className={diff > 0 ? 'text-red-400' : diff < 0 ? 'text-emerald-400' : 'text-slate-500'}>
-                                {diff > 0 ? '+' : ''}{formatARS(diff)}
-                              </span>
-                            ) : (
-                              <span className="text-slate-700">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-slate-700 bg-slate-800/30">
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-300">{t('total')}</td>
-                      <td className="px-6 py-4 text-right text-sm font-semibold text-white tabular-nums">
-                        {formatARS(data.totalXLS)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-semibold text-blue-400 tabular-nums">
-                        {totalStatements > 0 ? formatARS(totalStatements) : '—'}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-semibold tabular-nums">
-                        {totalStatements > 0 && data.totalXLS ? (
-                          <span className={totalStatements > data.totalXLS ? 'text-red-400' : 'text-emerald-400'}>
-                            {totalStatements > data.totalXLS ? '+' : ''}
-                            {formatARS(totalStatements - data.totalXLS)}
-                          </span>
-                        ) : '—'}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+              )}
 
               {/* USD summary */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
@@ -188,16 +168,16 @@ export default function MonthlyView() {
                 <div className="grid grid-cols-3 gap-6">
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('earned')}</p>
-                    <p className="text-2xl font-semibold text-emerald-400">{formatUSD(data.usdEarned)}</p>
+                    <p className="text-2xl font-semibold text-emerald-400">{formatForeignCurrency(data.usdEarned, foreignCurrency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('soldToARS')}</p>
-                    <p className="text-2xl font-semibold text-amber-400">{formatUSD(data.usdSold)}</p>
+                    <p className="text-2xl font-semibold text-amber-400">{formatForeignCurrency(data.usdSold, foreignCurrency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('balance')}</p>
                     <p className={`text-2xl font-semibold ${usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {usdBalance !== null ? formatUSD(usdBalance) : '—'}
+                      {usdBalance !== null ? formatForeignCurrency(usdBalance, foreignCurrency) : '—'}
                     </p>
                   </div>
                 </div>

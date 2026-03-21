@@ -18,6 +18,25 @@ export function formatUSD(amount) {
   }).format(amount)
 }
 
+// Currency metadata for supported foreign currencies
+export const CURRENCIES = [
+  { code: 'USD', label: 'USD', symbol: '$', flag: '🇺🇸' },
+  { code: 'EUR', label: 'EUR', symbol: '€', flag: '🇪🇺' },
+  { code: 'ARS', label: 'ARS', symbol: '$', flag: '🇦🇷' },
+]
+
+export function formatForeignCurrency(amount, currencyCode = 'USD') {
+  if (amount === null || amount === undefined) return '—'
+  // ARS formatted differently (es-AR locale)
+  const locale = currencyCode === 'ARS' ? 'es-AR' : 'en-US'
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
 // Default month names (Spanish). Components that need locale-aware names
 // should pass monthNames from their useTranslation() hook.
 export const MONTH_NAMES = [
@@ -52,16 +71,3 @@ export function toDisplayMonth(paymentKey, monthNames = MONTH_NAMES, statementLa
   }
 }
 
-export const CARD_LABELS = {
-  santander: 'Santander',
-  amex: 'Amex',
-  provincia: 'Provincia',
-  uala: 'UALA',
-}
-
-export const CARD_COLORS = {
-  santander: '#ef4444',  // rojo
-  amex: '#38bdf8',       // celeste
-  provincia: '#22c55e',  // verde
-  uala: '#1e40af',       // azul oscuro
-}

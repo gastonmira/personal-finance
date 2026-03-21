@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, PlusCircle, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PlusCircle, Settings, CreditCard, FileText, BarChart2 } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import FileUpload from './FileUpload'
-import { formatARS, formatUSD, toDisplayMonth, CARD_LABELS, CARD_COLORS } from '../utils/format'
+import { formatARS, formatForeignCurrency, toDisplayMonth, CURRENCIES } from '../utils/format'
 import { useTranslation } from '../i18n/useTranslation'
 import { normalizeCategory } from '../i18n/normalizeCategory'
 
@@ -108,21 +107,23 @@ function StatCard({ label, value, sub, color = 'text-white' }) {
 export default function Dashboard() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
+  const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency ?? 'USD')
+  const setCurrency = useFinanceStore((s) => s.setCurrency)
   const navigate = useNavigate()
   const t = useTranslation()
 
-  const [showUpload, setShowUpload] = useState(false)
   const [activeMonth, setActiveMonth] = useState(getCurrentMonthKey)
 
   const hasData = sortedKeys.length > 0
-  const data = months[activeMonth]
+  const noCards = cards.length === 0
 
   const currentIdx = sortedKeys.indexOf(activeMonth)
   const prevMonth = currentIdx > 0 ? sortedKeys[currentIdx - 1] : null
   const nextMonth = currentIdx < sortedKeys.length - 1 ? sortedKeys[currentIdx + 1] : null
 
   // Fallback to first available month if current not in data
-  const displayMonth = data ? activeMonth : (sortedKeys[sortedKeys.length - 1] ?? activeMonth)
+  const displayMonth = months[activeMonth] ? activeMonth : (sortedKeys[sortedKeys.length - 1] ?? activeMonth)
   const displayData = months[displayMonth]
 
   const totalStatements = displayData
@@ -134,7 +135,6 @@ export default function Dashboard() {
       ? (displayData.usdEarned ?? 0) - (displayData.usdSold ?? 0)
       : null
 
-  const cards = ['santander', 'amex', 'provincia', 'uala']
   const monthNames = t('monthNames')
   const statementLabel = t('statementOf')
 
@@ -146,32 +146,87 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-white">{t('dashboardTitle')}</h2>
           <p className="text-slate-500 text-sm mt-1">{t('dashboardSubtitle')}</p>
         </div>
-        <button
-          onClick={() => setShowUpload((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Upload size={16} />
-          {t('importXLS')}
-        </button>
       </div>
 
-      {/* Upload panel */}
-      {showUpload && (
-        <div className="mb-8">
-          <FileUpload onImported={() => setShowUpload(false)} />
+      {/* Onboarding banner — no cards configured */}
+      {noCards && (
+        <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 bg-amber-600/10 border border-amber-600/30 rounded-xl">
+          <p className="text-amber-300 text-sm">{t('onboardingBanner')}</p>
+          <button
+            onClick={() => navigate('/configuracion')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition-colors shrink-0"
+          >
+            <Settings size={14} />
+            {t('onboardingCta')}
+          </button>
         </div>
       )}
 
-      {!hasData && !showUpload && (
-        <div className="text-center py-20">
-          <p className="text-slate-500 text-lg">{t('noDataLoaded')}</p>
-          <p className="text-slate-600 text-sm mt-2">{t('noDataInstruction')}</p>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors"
-          >
-            {t('importXLS')}
-          </button>
+      {!hasData && (
+        <div className="py-10 max-w-xl mx-auto">
+          <p className="text-slate-400 text-lg font-semibold mb-1">{t('gettingStartedTitle')}</p>
+          <p className="text-slate-600 text-sm mb-8">{t('gettingStartedSubtitle')}</p>
+
+          {/* Currency picker */}
+          <div className="mb-6 p-5 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <p className="text-white text-sm font-medium mb-1">{t('onboardingCurrencyQ')}</p>
+            <p className="text-slate-500 text-xs mb-4">{t('onboardingCurrencyHint')}</p>
+            <div className="flex gap-2">
+              {CURRENCIES.map(({ code, label, flag }) => (
+                <button
+                  key={code}
+                  onClick={() => setCurrency(code)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
+                    foreignCurrency === code
+                      ? 'bg-blue-600 border-blue-500 text-white scale-105'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  <span>{flag}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div
+              onClick={() => navigate('/configuracion')}
+              className="flex items-start gap-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl cursor-pointer hover:border-slate-500 transition-colors group"
+            >
+              <div className="p-2 bg-blue-600/20 rounded-lg text-blue-400 shrink-0">
+                <CreditCard size={18} />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium group-hover:text-blue-300 transition-colors">{t('gettingStartedStep1Title')}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{t('gettingStartedStep1Desc')}</p>
+              </div>
+              <span className="ml-auto text-slate-600 text-xs self-center shrink-0">1</span>
+            </div>
+            <div
+              onClick={() => navigate('/ingresar')}
+              className="flex items-start gap-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl cursor-pointer hover:border-slate-500 transition-colors group"
+            >
+              <div className="p-2 bg-green-600/20 rounded-lg text-green-400 shrink-0">
+                <FileText size={18} />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium group-hover:text-green-300 transition-colors">{t('gettingStartedStep2Title')}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{t('gettingStartedStep2Desc')}</p>
+              </div>
+              <span className="ml-auto text-slate-600 text-xs self-center shrink-0">2</span>
+            </div>
+            <div className="flex items-start gap-4 p-4 bg-slate-800/30 border border-slate-800 rounded-xl opacity-60">
+              <div className="p-2 bg-purple-600/20 rounded-lg text-purple-400 shrink-0">
+                <BarChart2 size={18} />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium">{t('gettingStartedStep3Title')}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{t('gettingStartedStep3Desc')}</p>
+              </div>
+              <span className="ml-auto text-slate-600 text-xs self-center shrink-0">3</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -205,13 +260,8 @@ export default function Dashboard() {
 
           {displayData ? (
             <>
-              {/* Summary stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard
-                  label={t('statTotalXLS')}
-                  value={formatARS(displayData.totalXLS)}
-                  sub={t('statTotalXLSSub')}
-                />
+              {/* Summary stats — 3 cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 <StatCard
                   label={t('statTotalStatements')}
                   value={totalStatements > 0 ? formatARS(totalStatements) : '—'}
@@ -219,15 +269,15 @@ export default function Dashboard() {
                   color={totalStatements > 0 ? 'text-blue-400' : 'text-slate-500'}
                 />
                 <StatCard
-                  label={t('statUSDEarned')}
-                  value={formatUSD(displayData.usdEarned)}
+                  label={t('statUSDEarned', { cur: foreignCurrency })}
+                  value={formatForeignCurrency(displayData.usdEarned, foreignCurrency)}
                   sub={t('statUSDEarnedSub')}
                   color="text-emerald-400"
                 />
                 <StatCard
-                  label={t('statUSDBalance')}
-                  value={usdBalance !== null ? formatUSD(usdBalance) : '—'}
-                  sub={`${t('statUSDSold')} ${formatUSD(displayData.usdSold)}`}
+                  label={t('statUSDBalance', { cur: foreignCurrency })}
+                  value={usdBalance !== null ? formatForeignCurrency(usdBalance, foreignCurrency) : '—'}
+                  sub={`${t('statUSDSold')} ${formatForeignCurrency(displayData.usdSold, foreignCurrency)}`}
                   color={usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}
                 />
               </div>
@@ -242,34 +292,28 @@ export default function Dashboard() {
               )}
 
               {/* Cards breakdown */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h4 className="font-semibold text-white">{t('sectionByCard')}</h4>
-                  <button
-                    onClick={() => navigate('/ingresar', { state: { month: displayMonth } })}
-                    className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    <PlusCircle size={14} />
-                    {t('loadStatements')}
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {cards.map((card) => {
-                    const xlsAmt = displayData.cards?.[card]
-                    const stmtAmt = displayData.statements?.[card]
-                    if (!xlsAmt && !stmtAmt) return null
-                    return (
-                      <div key={card} className="flex items-center gap-4">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: CARD_COLORS[card] }}
-                        />
-                        <span className="text-slate-300 text-sm w-28 shrink-0">{CARD_LABELS[card]}</span>
-                        <div className="flex-1 flex items-center gap-6">
-                          <div className="text-sm">
-                            <span className="text-slate-500 text-xs">{t('labelXLS')} </span>
-                            <span className="text-slate-200">{formatARS(xlsAmt)}</span>
-                          </div>
+              {cards.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h4 className="font-semibold text-white">{t('sectionByCard')}</h4>
+                    <button
+                      onClick={() => navigate('/ingresar', { state: { month: displayMonth } })}
+                      className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      <PlusCircle size={14} />
+                      {t('loadStatements')}
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {cards.map((card) => {
+                      const stmtAmt = displayData.statements?.[card.id]
+                      return (
+                        <div key={card.id} className="flex items-center gap-4">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: card.color }}
+                          />
+                          <span className="text-slate-300 text-sm w-28 shrink-0">{card.name}</span>
                           <div className="text-sm">
                             <span className="text-slate-500 text-xs">{t('labelStatement')} </span>
                             {stmtAmt ? (
@@ -279,11 +323,11 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <div className="text-center py-12 text-slate-500">
