@@ -55,6 +55,7 @@ export default function EntryForm() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
   const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency ?? 'USD')
   const setStatement = useFinanceStore((s) => s.setStatement)
   const setUSD = useFinanceStore((s) => s.setUSD)
   const setTransactions = useFinanceStore((s) => s.setTransactions)
@@ -259,7 +260,7 @@ export default function EntryForm() {
         <h3 className="font-semibold text-white mb-5">{t('monthlyDollarsSection')}</h3>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdEarned')}</span>
+            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdEarned', { cur: foreignCurrency })}</span>
             <div className="relative flex-1 max-w-xs">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
               <input
@@ -276,7 +277,7 @@ export default function EntryForm() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdSold')}</span>
+            <span className="text-slate-300 text-sm font-medium w-36 shrink-0">{t('usdSold', { cur: foreignCurrency })}</span>
             <div className="relative flex-1 max-w-xs">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
               <input

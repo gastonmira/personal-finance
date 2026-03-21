@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import { formatARS, formatUSD, formatMonthKey } from '../utils/format'
+import { formatARS, formatForeignCurrency, formatMonthKey } from '../utils/format'
 import { useTranslation } from '../i18n/useTranslation'
 
 function getCurrentMonthKey() {
@@ -15,6 +15,7 @@ export default function MonthlyView() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
   const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency ?? 'USD')
   const navigate = useNavigate()
   const t = useTranslation()
 
@@ -167,16 +168,16 @@ export default function MonthlyView() {
                 <div className="grid grid-cols-3 gap-6">
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('earned')}</p>
-                    <p className="text-2xl font-semibold text-emerald-400">{formatUSD(data.usdEarned)}</p>
+                    <p className="text-2xl font-semibold text-emerald-400">{formatForeignCurrency(data.usdEarned, foreignCurrency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('soldToARS')}</p>
-                    <p className="text-2xl font-semibold text-amber-400">{formatUSD(data.usdSold)}</p>
+                    <p className="text-2xl font-semibold text-amber-400">{formatForeignCurrency(data.usdSold, foreignCurrency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">{t('balance')}</p>
                     <p className={`text-2xl font-semibold ${usdBalance !== null && usdBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {usdBalance !== null ? formatUSD(usdBalance) : '—'}
+                      {usdBalance !== null ? formatForeignCurrency(usdBalance, foreignCurrency) : '—'}
                     </p>
                   </div>
                 </div>

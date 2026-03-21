@@ -14,6 +14,7 @@ const useFinanceStore = create(
     (set, get) => ({
       config: {
         cards: [], // Array of { id: string, name: string, color: string }
+        foreignCurrency: 'USD', // 'USD' | 'EUR' | 'ARS'
       },
 
       months: {},
@@ -45,6 +46,9 @@ const useFinanceStore = create(
 
       setCards: (cards) =>
         set((state) => ({ config: { ...state.config, cards } })),
+
+      setCurrency: (foreignCurrency) =>
+        set((state) => ({ config: { ...state.config, foreignCurrency } })),
 
       // ── Month actions ─────────────────────────────────────────────────────
 
@@ -139,7 +143,8 @@ const useFinanceStore = create(
         if (!state) return
         // Backwards compatibility: if config is missing or cards is empty,
         // check for legacy card data (santander/amex/provincia/uala) and auto-populate
-        if (!state.config) state.config = { cards: [] }
+        if (!state.config) state.config = { cards: [], foreignCurrency: 'USD' }
+        if (!state.config.foreignCurrency) state.config.foreignCurrency = 'USD'
         if (state.config.cards.length === 0) {
           const hasLegacy = Object.values(state.months ?? {}).some((m) =>
             LEGACY_CARDS.some((c) => m.statements?.[c.id] != null)

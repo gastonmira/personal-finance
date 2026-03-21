@@ -1,6 +1,6 @@
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import { formatARS, formatUSD, formatMonthKey } from '../utils/format'
+import { formatARS, formatForeignCurrency, formatMonthKey } from '../utils/format'
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -31,7 +31,7 @@ const CustomTooltipARS = ({ active, payload, label, cardMap }) => {
   )
 }
 
-const CustomTooltipUSD = ({ active, payload, label }) => {
+const CustomTooltipUSD = ({ active, payload, label, currency = 'USD' }) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs shadow-xl">
@@ -40,7 +40,7 @@ const CustomTooltipUSD = ({ active, payload, label }) => {
         <div key={p.dataKey} className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.stroke || p.fill }} />
           <span className="text-slate-400">{p.name}:</span>
-          <span className="text-white font-medium">{formatUSD(p.value)}</span>
+          <span className="text-white font-medium">{formatForeignCurrency(p.value, currency)}</span>
         </div>
       ))}
     </div>
@@ -51,6 +51,7 @@ export default function Reports() {
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
   const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency ?? 'USD')
   const t = useTranslation()
 
   const monthNamesShort = t('monthNamesShort')
@@ -126,13 +127,13 @@ export default function Reports() {
           <p className="text-slate-500 text-xs mt-1">{t('avgPerMonth')} {formatARSShort(Math.round(avgTotal))}{t('perMonth')}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDEarned')}</p>
-          <p className="text-2xl font-semibold text-emerald-400 mt-2">{formatUSD(totalUSDEarned)}</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDEarned', { cur: foreignCurrency })}</p>
+          <p className="text-2xl font-semibold text-emerald-400 mt-2">{formatForeignCurrency(totalUSDEarned, foreignCurrency)}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDSold')}</p>
-          <p className="text-2xl font-semibold text-amber-400 mt-2">{formatUSD(totalUSDSold)}</p>
-          <p className="text-slate-500 text-xs mt-1">{t('balanceLabel2')} {formatUSD(totalUSDEarned - totalUSDSold)}</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">{t('totalUSDSold', { cur: foreignCurrency })}</p>
+          <p className="text-2xl font-semibold text-amber-400 mt-2">{formatForeignCurrency(totalUSDSold, foreignCurrency)}</p>
+          <p className="text-slate-500 text-xs mt-1">{t('balanceLabel2')} {formatForeignCurrency(totalUSDEarned - totalUSDSold, foreignCurrency)}</p>
         </div>
       </div>
 
@@ -206,7 +207,7 @@ export default function Reports() {
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltipUSD />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Tooltip content={<CustomTooltipUSD currency={foreignCurrency} />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
               <Legend formatter={(v) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{v === 'usdEarned' ? t('legendEarned') : v === 'usdSold' ? t('legendSold') : v}</span>} />
               <Bar dataKey="usdEarned" name="usdEarned" fill="#10b981" radius={[4,4,0,0]} />
               <Bar dataKey="usdSold" name="usdSold" fill="#f59e0b" radius={[4,4,0,0]} />
@@ -226,9 +227,9 @@ export default function Reports() {
               <tr className="border-b border-slate-800">
                 <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colMonth')}</th>
                 <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colStatements')}</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDEarned')}</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDSold')}</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDBalance')}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDEarned', { cur: foreignCurrency })}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDSold', { cur: foreignCurrency })}</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">{t('colUSDBalance', { cur: foreignCurrency })}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -244,11 +245,11 @@ export default function Reports() {
                     <td className="px-5 py-3 text-right text-sm tabular-nums">
                       {stmt > 0 ? <span className="text-blue-400">{formatARS(stmt)}</span> : <span className="text-slate-600">—</span>}
                     </td>
-                    <td className="px-5 py-3 text-right text-sm text-emerald-400 tabular-nums">{formatUSD(d.usdEarned)}</td>
-                    <td className="px-5 py-3 text-right text-sm text-amber-400 tabular-nums">{formatUSD(d.usdSold)}</td>
+                    <td className="px-5 py-3 text-right text-sm text-emerald-400 tabular-nums">{formatForeignCurrency(d.usdEarned, foreignCurrency)}</td>
+                    <td className="px-5 py-3 text-right text-sm text-amber-400 tabular-nums">{formatForeignCurrency(d.usdSold, foreignCurrency)}</td>
                     <td className="px-5 py-3 text-right text-sm tabular-nums">
                       {d.usdEarned !== null
-                        ? <span className={bal >= 0 ? 'text-emerald-400' : 'text-red-400'}>{formatUSD(bal)}</span>
+                        ? <span className={bal >= 0 ? 'text-emerald-400' : 'text-red-400'}>{formatForeignCurrency(bal, foreignCurrency)}</span>
                         : <span className="text-slate-600">—</span>}
                     </td>
                   </tr>

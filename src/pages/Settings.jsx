@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from '../i18n/useTranslation'
+import { CURRENCIES } from '../utils/format'
 
 const PRESET_COLORS = [
   '#ef4444', // red
@@ -110,9 +111,11 @@ function CardForm({ initial, onSave, onCancel, t }) {
 
 export default function Settings() {
   const cards = useFinanceStore(useShallow((s) => s.config.cards))
+  const foreignCurrency = useFinanceStore((s) => s.config.foreignCurrency)
   const addCard = useFinanceStore((s) => s.addCard)
   const removeCard = useFinanceStore((s) => s.removeCard)
   const updateCard = useFinanceStore((s) => s.updateCard)
+  const setCurrency = useFinanceStore((s) => s.setCurrency)
   const t = useTranslation()
 
   const [showAddForm, setShowAddForm] = useState(false)
@@ -138,6 +141,28 @@ export default function Settings() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">{t('settingsTitle')}</h2>
         <p className="text-slate-500 text-sm mt-1">{t('settingsSubtitle')}</p>
+      </div>
+
+      {/* Currency section */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+        <h3 className="font-semibold text-white mb-1">{t('currencySection')}</h3>
+        <p className="text-slate-500 text-xs mb-4">{t('currencySectionDesc')}</p>
+        <div className="flex gap-2">
+          {CURRENCIES.map(({ code, label, flag }) => (
+            <button
+              key={code}
+              onClick={() => setCurrency(code)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                foreignCurrency === code
+                  ? 'bg-blue-600 border-blue-500 text-white'
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+              }`}
+            >
+              <span>{flag}</span>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Cards section */}
