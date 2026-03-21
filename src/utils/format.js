@@ -52,16 +52,3 @@ export function toDisplayMonth(paymentKey, monthNames = MONTH_NAMES, statementLa
   }
 }
 
-export const CARD_LABELS = {
-  santander: 'Santander',
-  amex: 'Amex',
-  provincia: 'Provincia',
-  uala: 'UALA',
-}
-
-export const CARD_COLORS = {
-  santander: '#ef4444',  // rojo
-  amex: '#38bdf8',       // celeste
-  provincia: '#22c55e',  // verde
-  uala: '#1e40af',       // azul oscuro
-}

@@ -1,38 +1,52 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// Legacy card definitions used for backwards-compatibility migration
+const LEGACY_CARDS = [
+  { id: 'santander', name: 'Santander', color: '#ef4444' },
+  { id: 'amex', name: 'Amex', color: '#38bdf8' },
+  { id: 'provincia', name: 'Provincia', color: '#22c55e' },
+  { id: 'uala', name: 'UALA', color: '#1e40af' },
+]
+
 const useFinanceStore = create(
   persist(
     (set, get) => ({
+      config: {
+        cards: [], // Array of { id: string, name: string, color: string }
+      },
+
       months: {},
 
-      importData: (parsedData) => {
+      // ── Config actions ────────────────────────────────────────────────────
+
+      addCard: (card) =>
         set((state) => ({
-          months: {
-            ...state.months,
-            ...Object.fromEntries(
-              Object.entries(parsedData).map(([key, data]) => [
-                key,
-                {
-                  cards: data.cards ?? {},
-                  totalXLS: data.totalXLS ?? 0,
-                  usdEarned: data.usdEarned ?? null,
-                  usdSold: data.usdSold ?? null,
-                  // Preserve existing manual statements if present
-                  statements: state.months[key]?.statements ?? {
-                    santander: null,
-                    amex: null,
-                    provincia: null,
-                    uala: null,
-                  },
-                  // Preserve existing transactions if present
-                  transactions: state.months[key]?.transactions ?? [],
-                },
-              ])
+          config: { ...state.config, cards: [...state.config.cards, card] },
+        })),
+
+      removeCard: (id) =>
+        set((state) => ({
+          config: {
+            ...state.config,
+            cards: state.config.cards.filter((c) => c.id !== id),
+          },
+        })),
+
+      updateCard: (id, updates) =>
+        set((state) => ({
+          config: {
+            ...state.config,
+            cards: state.config.cards.map((c) =>
+              c.id === id ? { ...c, ...updates } : c
             ),
           },
-        }))
-      },
+        })),
+
+      setCards: (cards) =>
+        set((state) => ({ config: { ...state.config, cards } })),
+
+      // ── Month actions ─────────────────────────────────────────────────────
 
       setStatement: (monthKey, cardStatements) => {
         set((state) => ({
@@ -69,11 +83,9 @@ const useFinanceStore = create(
             months: {
               ...state.months,
               [monthKey]: {
-                cards: {},
-                totalXLS: null,
                 usdEarned: null,
                 usdSold: null,
-                statements: { santander: null, amex: null, provincia: null, uala: null },
+                statements: {},
                 ...state.months[monthKey],
                 transactions: [...existing, ...newTransactions],
               },
@@ -88,11 +100,9 @@ const useFinanceStore = create(
           months: {
             ...state.months,
             [monthKey]: {
-              cards: {},
-              totalXLS: null,
               usdEarned: null,
               usdSold: null,
-              statements: { santander: null, amex: null, provincia: null, uala: null },
+              statements: {},
               ...state.months[monthKey],
               transactions,
             },
@@ -121,10 +131,24 @@ const useFinanceStore = create(
 
       getMonth: (monthKey) => get().months[monthKey] ?? null,
 
-      clearAll: () => set({ months: {} }),
+      clearAll: () => set({ months: {}, config: { cards: [] } }),
     }),
     {
       name: 'personal-fin-storage',
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        // Backwards compatibility: if config is missing or cards is empty,
+        // check for legacy card data (santander/amex/provincia/uala) and auto-populate
+        if (!state.config) state.config = { cards: [] }
+        if (state.config.cards.length === 0) {
+          const hasLegacy = Object.values(state.months ?? {}).some((m) =>
+            LEGACY_CARDS.some((c) => m.statements?.[c.id] != null)
+          )
+          if (hasLegacy) {
+            state.config.cards = LEGACY_CARDS
+          }
+        }
+      },
     }
   )
 )
