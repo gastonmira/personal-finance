@@ -1,18 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2, MessageSquare } from 'lucide-react'
+import { Save, CheckCircle, Upload, List, Pencil, PlusCircle, Trash2, MessageSquare, FileText } from 'lucide-react'
 import useFinanceStore from '../store/useFinanceStore'
 import { useShallow } from 'zustand/react/shallow'
-import { formatMonthKey, formatARS, CARD_LABELS, CARD_COLORS } from '../utils/format'
+import { formatMonthKey, formatARS } from '../utils/format'
 import { parseStatementFile } from '../utils/statementParser'
 import ColumnMapper from './ColumnMapper'
 import TransactionList from './TransactionList'
 import SmsPaste from './SmsPaste'
+import PdfUpload from './PdfUpload'
 import { useTranslation } from '../i18n/useTranslation'
 
-const CARDS = ['santander', 'amex', 'provincia', 'uala']
-
-function buildMonthOptions(sortedKeys) {
+function buildMonthOptions() {
   const options = []
   for (const year of ['2025', '2026']) {
     for (let m = 1; m <= 12; m++) {
@@ -55,20 +54,21 @@ export default function EntryForm() {
   const location = useLocation()
   const months = useFinanceStore((s) => s.months)
   const sortedKeys = useFinanceStore(useShallow((s) => Object.keys(s.months).sort()))
+  const cards = useFinanceStore(useShallow((s) => s.config.cards))
   const setStatement = useFinanceStore((s) => s.setStatement)
   const setUSD = useFinanceStore((s) => s.setUSD)
   const setTransactions = useFinanceStore((s) => s.setTransactions)
   const appendTransactions = useFinanceStore((s) => s.appendTransactions)
   const t = useTranslation()
 
-  const monthOptions = buildMonthOptions(sortedKeys)
+  const monthOptions = buildMonthOptions()
 
   const defaultMonth =
     location.state?.month ??
     (sortedKeys.length > 0 ? sortedKeys[sortedKeys.length - 1] : '2026-01')
 
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth)
-  const [statements, setStatements] = useState({ santander: '', amex: '', provincia: '', uala: '' })
+  const [statements, setStatements] = useState({})
   const [usdEarned, setUsdEarned] = useState('')
   const [usdSold, setUsdSold] = useState('')
   const [saved, setSaved] = useState(false)
@@ -80,23 +80,26 @@ export default function EntryForm() {
   const [pendingTxs, setPendingTxs] = useState(null)         // categorized transactions
   const [parseError, setParseError] = useState(null)
   const [showSmsPaste, setShowSmsPaste] = useState(false)
+  const [showPdfUpload, setShowPdfUpload] = useState(false)
   const [smsSaved, setSmsSaved] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Pre-fill when month changes
+  // Build an empty statements object from configured cards
+  const emptyStatements = () =>
+    Object.fromEntries(cards.map((c) => [c.id, '']))
+
+  // Pre-fill when month or cards change
   useEffect(() => {
     const data = months[selectedMonth]
     if (data) {
-      setStatements({
-        santander: data.statements?.santander ?? '',
-        amex: data.statements?.amex ?? '',
-        provincia: data.statements?.provincia ?? '',
-        uala: data.statements?.uala ?? '',
-      })
+      const filled = Object.fromEntries(
+        cards.map((c) => [c.id, data.statements?.[c.id] ?? ''])
+      )
+      setStatements(filled)
       setUsdEarned(data.usdEarned ?? '')
       setUsdSold(data.usdSold ?? '')
     } else {
-      setStatements({ santander: '', amex: '', provincia: '', uala: '' })
+      setStatements(emptyStatements())
       setUsdEarned('')
       setUsdSold('')
     }
@@ -106,13 +109,13 @@ export default function EntryForm() {
     setParsedFile(null)
     setPendingTxs(null)
     setParseError(null)
-  }, [selectedMonth, months])
+  }, [selectedMonth, months, cards]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     const stmtData = {}
-    for (const card of CARDS) {
-      const val = parseFloat(statements[card])
-      stmtData[card] = isNaN(val) ? null : val
+    for (const card of cards) {
+      const val = parseFloat(statements[card.id])
+      stmtData[card.id] = isNaN(val) ? null : val
     }
     setStatement(selectedMonth, stmtData)
 
@@ -184,14 +187,21 @@ export default function EntryForm() {
     setTimeout(() => setSmsSaved(false), 3000)
   }
 
+  const handlePdfDone = (transactions) => {
+    appendTransactions(selectedMonth, transactions)
+    setShowPdfUpload(false)
+    setSmsSaved(true)
+    setTimeout(() => setSmsSaved(false), 3000)
+  }
+
   // ── Derived ───────────────────────────────────────────────────────────────
 
-  const xlsData = months[selectedMonth]
-  const existingTxs = xlsData?.transactions ?? []
+  const monthData = months[selectedMonth]
+  const existingTxs = monthData?.transactions ?? []
 
   // Total statement across all cards (for closing check)
-  const statementTotal = CARDS.reduce((sum, card) => {
-    const v = parseFloat(statements[card])
+  const statementTotal = cards.reduce((sum, card) => {
+    const v = parseFloat(statements[card.id])
     return sum + (isNaN(v) ? 0 : v)
   }, 0) || null
 
@@ -226,43 +236,22 @@ export default function EntryForm() {
 
       {/* Card statements */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-semibold text-white">{t('cardStatements')}</h3>
-          {xlsData && (
-            <span className="text-xs text-slate-500">
-              {t('totalXLSLabel')}{' '}
-              <span className="text-slate-300">
-                {new Intl.NumberFormat('es-AR', {
-                  style: 'currency',
-                  currency: 'ARS',
-                  minimumFractionDigits: 0,
-                }).format(xlsData.totalXLS ?? 0)}
-              </span>
-            </span>
-          )}
-        </div>
-        <div className="space-y-4">
-          {CARDS.map((card) => (
-            <div key={card}>
+        <h3 className="font-semibold text-white mb-5">{t('cardStatements')}</h3>
+        {cards.length === 0 ? (
+          <p className="text-slate-500 text-sm text-center py-4">{t('noCardsConfiguredEntry')}</p>
+        ) : (
+          <div className="space-y-4">
+            {cards.map((card) => (
               <MoneyInput
-                label={CARD_LABELS[card]}
-                color={CARD_COLORS[card]}
-                value={statements[card]}
-                onChange={(v) => setStatements((s) => ({ ...s, [card]: v }))}
+                key={card.id}
+                label={card.name}
+                color={card.color}
+                value={statements[card.id] ?? ''}
+                onChange={(v) => setStatements((s) => ({ ...s, [card.id]: v }))}
               />
-              {xlsData?.cards?.[card] ? (
-                <p className="text-xs text-slate-600 mt-1 ml-40">
-                  {t('xlsLabel')}{' '}
-                  {new Intl.NumberFormat('es-AR', {
-                    style: 'currency',
-                    currency: 'ARS',
-                    minimumFractionDigits: 0,
-                  }).format(xlsData.cards[card])}
-                </p>
-              ) : null}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* USD */}
@@ -378,12 +367,20 @@ export default function EntryForm() {
                     {t('addAnotherStatement')}
                   </button>
                   <button
-                    onClick={() => setShowSmsPaste((v) => !v)}
+                    onClick={() => { setShowSmsPaste((v) => !v); setShowPdfUpload(false) }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
                                text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
                   >
                     <MessageSquare size={15} />
                     {t('pasteSms')}
+                  </button>
+                  <button
+                    onClick={() => { setShowPdfUpload((v) => !v); setShowSmsPaste(false) }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/40
+                               text-violet-400 hover:text-violet-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <FileText size={15} />
+                    {t('uploadPDF')}
                   </button>
                   <button
                     onClick={() => triggerUpload('replace')}
@@ -412,12 +409,20 @@ export default function EntryForm() {
                     {t('uploadCSV')}
                   </button>
                   <button
-                    onClick={() => setShowSmsPaste((v) => !v)}
+                    onClick={() => { setShowSmsPaste((v) => !v); setShowPdfUpload(false) }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40
                                text-indigo-400 hover:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
                   >
                     <MessageSquare size={15} />
                     {t('pasteSms')}
+                  </button>
+                  <button
+                    onClick={() => { setShowPdfUpload((v) => !v); setShowSmsPaste(false) }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/40
+                               text-violet-400 hover:text-violet-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <FileText size={15} />
+                    {t('uploadPDF')}
                   </button>
                 </div>
               )}
@@ -431,6 +436,16 @@ export default function EntryForm() {
                   <SmsPaste
                     onDone={handleSmsDone}
                     onClose={() => setShowSmsPaste(false)}
+                  />
+                </div>
+              )}
+
+              {/* PDF upload panel */}
+              {showPdfUpload && (
+                <div className="mt-4">
+                  <PdfUpload
+                    onDone={handlePdfDone}
+                    onClose={() => setShowPdfUpload(false)}
                   />
                 </div>
               )}
